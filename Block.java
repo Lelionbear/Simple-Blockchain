@@ -1,4 +1,5 @@
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -32,6 +33,24 @@ public class Block {
 	 * Integer used to mine the blockchain
 	 */
 	private int nonce;
+	/**
+	 * Data will be a simple message.
+	 */
+	public ArrayList<Transaction> transactions = new ArrayList<Transaction>();
+
+	/**
+	 * Constructor that creates the genesis block in the network
+	 *
+	 * @param previousHash
+	 */
+	public Block(String previousHash) {
+		this.index = 0;
+		this.timeStamp = LocalDateTime.now().toString();
+		this.data = Map.of("Genesis Block",0);
+		this.previousHash = previousHash;
+
+		this.hash = encrypt(); //Making sure we do this after we set the other values.
+	}
 
 	/**
 	 * Constructor that creates a block to be chained in the blockchain
@@ -47,6 +66,30 @@ public class Block {
 		this.previousHash = previousHash;
 
 		this.hash = encrypt();
+	}
+
+	/**
+	 * Adds transactions to this block
+	 *
+	 * @param transaction
+	 * @return true if added successfully
+	 */
+	public boolean addTransaction(Transaction transaction) {
+		//process transaction and check if valid, unless block is genesis block then ignore.
+		if(transaction == null) {
+			return false;
+		}
+
+		if((previousHash != "0")) {
+			if((transaction.processTransaction() != true)) {
+				System.out.println("Transaction failed to process. Discarded.");
+				return false;
+			}
+		}
+
+		transactions.add(transaction);
+		System.out.println("Transaction Successfully added to Block");
+		return true;
 	}
 
 	/**

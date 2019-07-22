@@ -1,5 +1,11 @@
+import java.security.Key;
 import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 
 /**
  * @author lelionbear
@@ -106,6 +112,103 @@ public class CryptoUtil {
 		} catch (Exception e) {
 			throw new RuntimeException();
 		}
+	}
+
+	/**
+	 * Encodes the specified byte array into a String using the Base64encoding scheme.
+	 *
+	 * @param key
+	 * @return returns encoded string from any key
+	 */
+	public static String getStringFromKey(Key key) {
+		return Base64.getEncoder().encodeToString(key.getEncoded());
+	}
+
+	/**
+	 * Verifies the signature from the transaction
+	 *
+	 * @param publicKey
+	 * @param data
+	 * @param signature
+	 * @return true if valid
+	 */
+	public static boolean verifyECDSASig(PublicKey publicKey, String data, byte[] signature) {
+		try {
+
+			Signature ecdsaVerify = Signature.getInstance("SHA256withECDSA", "SunEC");
+
+			ecdsaVerify.initVerify(publicKey);
+
+			ecdsaVerify.update(data.getBytes());
+
+			return ecdsaVerify.verify(signature);
+
+		} catch(Exception e) {
+			throw new RuntimeException();
+		}
+	}
+
+	/**
+	 * Applies ECDSA signature on the transaction and returns the result in an array of bytes
+	 *
+	 * @param privateKey the sender's private key
+	 * @param input
+	 * @return returns signature as bytes array
+	 */
+	public static byte[] applyECDSASig(PrivateKey privateKey, String input) {
+
+		byte[] output = new byte[0];
+
+		try {
+
+			Signature ecdsaSign = Signature.getInstance("SHA256withECDSA", "SunEC");
+
+			ecdsaSign.initSign(privateKey);
+
+			byte[] strByte = input.getBytes();
+
+			ecdsaSign.update(strByte);
+
+			byte[] realSig = ecdsaSign.sign();
+
+			output = realSig;
+
+		} catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+
+		return output;
+	}
+
+	/**
+	 * Tacks in array of transactions and returns a merkle root
+	 *
+	 * @param transactions
+	 * @return returns merkle root from array of transactions
+	 */
+	public static String getMerkleRoot(ArrayList<Transaction> transactions) {
+		int count = transactions.size();
+
+		ArrayList<String> previousTreeLayer = new ArrayList<String>();
+
+		for(Transaction transaction : transactions) {
+			previousTreeLayer.add(transaction.transactionId);
+		}
+
+		ArrayList<String> treeLayer = previousTreeLayer;
+
+		while(count > 1) {
+			treeLayer = new ArrayList<String>();
+			for(int i=1; i < previousTreeLayer.size(); i++) {
+				treeLayer.add(sha256(previousTreeLayer.get(i-1) + previousTreeLayer.get(i)));
+			}
+			count = treeLayer.size();
+			previousTreeLayer = treeLayer;
+		}
+
+		String merkleRoot = (treeLayer.size() == 1) ? treeLayer.get(0) : "";
+
+		return merkleRoot;
 	}
 
 }
