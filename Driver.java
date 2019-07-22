@@ -25,6 +25,10 @@ public class Driver {
 	 */
 	public static Wallet delta;
 	/**
+	 * echo's wallet
+	 */
+	public static Wallet echo;
+	/**
 	 * coinbase wallet
 	 */
 	public static Wallet coinBase;
@@ -50,29 +54,29 @@ public class Driver {
 		setup();
 		Blockchain.validateBlockchain();
 		Block block;
-		Random rand = new Random();
-		int randWallet;
+		int randWalletSender, randWalletReciever;
 		float randCoins;
 
 		System.out.println(wallets.toString());
+		System.out.println(wallets.size());
 
 		walletStats();
 
-		for(int i = 0; i < 30; i++) {
-			randWallet = rand.nextInt(wallets.size());
-			randWallet = randWallet == 0 ? randWallet + 1 : randWallet;
-			randCoins = rand.nextInt(100) + 1;//rand.nextFloat() * 10;
-//			randCoins = randCoins / 10.f;
+		for(int i = 0; i < 50; i++) {
+			do {
+				randWalletSender = randomWallet();
+				randWalletReciever = randomWallet();
+				randCoins = randomCoins();
+			}while(randWalletSender == randWalletReciever);
 
-			System.out.println(i);
-			System.out.println("Sender:\t " + wallets.get(randWallet));
-			System.out.println("Reciever:\t " + wallets.get(wallets.size() % randWallet));
+			System.out.println("Sender:\t " + wallets.get(randWalletSender));
+			System.out.println("Reciever:\t " + wallets.get(randWalletReciever));
 			System.out.println("Transaction amount: " + randCoins);
 
 			block = new Block(Blockchain.getLatestHash());
 			block.addTransaction(
-					wallets.get(randWallet).sendFunds(
-							wallets.get(wallets.size() % randWallet).publicKey,
+					wallets.get(randWalletSender).sendFunds(
+							wallets.get(randWalletReciever).publicKey,
 							randCoins));
 			Blockchain.addBlock(block);
 
@@ -85,11 +89,20 @@ public class Driver {
 
 	}
 
+	private static float randomCoins() {
+		return new Random().nextInt(100);
+	}
+
+	private static int randomWallet() {
+		return new Random().nextInt(100) % wallets.size();
+	}
+
 	private static void walletStats() {
 		System.out.println("alpha balance is: " + alpha.getBalance());
 		System.out.println("bravo balance is: " + bravo.getBalance());
 		System.out.println("charlie balance is: " + charlie.getBalance());
 		System.out.println("delta balance is: " + delta.getBalance());
+		System.out.println("echo balance is: " + echo.getBalance());
 	}
 
 	/**
@@ -101,6 +114,7 @@ public class Driver {
 		wallets.add((bravo = new Wallet("bravo")));
 		wallets.add((charlie = new Wallet("charlie")));
 		wallets.add((delta = new Wallet("delta")));
+		wallets.add((echo = new Wallet("echo")));
 		coinBase = new Wallet();
 
 
@@ -122,7 +136,7 @@ public class Driver {
 		Blockchain.addBlock(genesis);
 
 		Block block1 = new Block(Blockchain.getLatestHash());
-		block1.addTransaction(alpha.sendFunds(bravo.publicKey, 300f));
+		block1.addTransaction(alpha.sendFunds(bravo.publicKey, 200f));
 		Blockchain.addBlock(block1);
 
 		Block block2 = new Block(Blockchain.getLatestHash());
@@ -130,8 +144,12 @@ public class Driver {
 		Blockchain.addBlock(block2);
 
 		Block block3 = new Block(Blockchain.getLatestHash());
-		block3.addTransaction(alpha.sendFunds( delta.publicKey, 100));
+		block3.addTransaction(alpha.sendFunds( delta.publicKey, 200));
 		Blockchain.addBlock(block3);
+
+		Block block4 = new Block(Blockchain.getLatestHash());
+		block4.addTransaction(alpha.sendFunds( echo.publicKey, 200));
+		Blockchain.addBlock(block4);
 	}
 
 //	System.out.println("Wallets created");
